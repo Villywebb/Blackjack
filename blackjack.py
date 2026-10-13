@@ -5,7 +5,7 @@ class Card:
         self.suit = suit
         self.value = value
         
-    def print_card(self):
+    def get_print_format(self):
         to_print = str(self.value)
         match self.value:
             case 11: to_print = "Knight"
@@ -13,7 +13,7 @@ class Card:
             case 13: to_print = "King"
             case 14: to_print = "Ace"
 
-        print(f"{to_print} of {self.suit}")
+        return f"{to_print} of {self.suit}"
 
 class Player:
     def __init__(self,name:str):
@@ -29,17 +29,20 @@ class Player:
         return value_list
     
 def draw_card()->Card:
-    suit = ""
-    match random.randint(1,4):
-        case 1: suit = "hearts"
-        case 2: suit = "clubs"
-        case 3: suit = "spades"
-        case 4: suit = "diamonds"
-
-    value = random.randint(2,13)
-
-    return Card(suit,value)
-
+    played_cards = []
+    while True:
+        suit = ""
+        match random.randint(1,4):
+            case 1: suit = "hearts"
+            case 2: suit = "clubs"
+            case 3: suit = "spades"
+            case 4: suit = "diamonds"
+        value = random.randint(2,14)
+        card = Card(suit,value)
+        if card not in played_cards:
+            played_cards.append(card)
+            return card
+        
 def give_card(recipient,amount = 1):
     for _ in range(amount):
         random_card = draw_card()
@@ -99,10 +102,15 @@ def check_value(player):
     else: return total_value,"UNDER"
 
 def print_player_hand(player):
-    print(f"\n\n{player.name}:s cards")
-    print("-----------------")
+    print(f"\n\n{player.name}:s cards",end="")
+    print(f"Dealers card")
+    print("--------------                       --------------")
+    count = 0
     for card in player.hand:
-        card.print_card()
+        if count == 0:
+            print(card.get_print_format(),end="")
+            print("WWWWWWWWWWWW#")
+        count+=1
     sum,unused = check_value(player)
     print(f"\nCard sum: {sum}")    
 
@@ -125,7 +133,6 @@ def player_turn(player):
         match(user_choice):
             case "h":
                 match(hit(player)):
-
                     case "BUSTED":
                         print("Busted :(")
                         input("Press Space to continue...")
@@ -136,7 +143,6 @@ def player_turn(player):
                         break
                     case "UNDER": continue
             case "s":
-                print_player_hand(player)
                 break
     
 def runner():
