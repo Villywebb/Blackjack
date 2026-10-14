@@ -2,6 +2,9 @@ lazy import random
 
 NUM_OF_DECKS = 1
 
+class EmptyDeckError(Exception):
+    pass
+
 class Card:
     def __init__(self,suit,value):
         self.suit = suit
@@ -27,6 +30,34 @@ class Player:
             value_list.append(card.value)
         value_list.sort()
         return value_list
+
+    def get_total_value(self):
+        total_value = 0
+        aces = 0
+        for value in self.get_sorted_card_values():
+            if value >= 11 and value <= 13: 
+                #face card
+                value = 10
+            elif value == 14:
+                #ace
+                value = 11
+                aces += 1
+            total_value += value
+
+        while total_value > 21 and aces > 0:
+            total_value -= 10
+            aces -= 1
+        return total_value
+    
+    def get_state(self):
+        total_value = self.get_total_value()
+        if total_value > 21:
+            return "BUSTED"
+        elif total_value == 21:
+            if len(self.hand) == 2:
+                return "BLACKJACK"
+            return "TWENTY_ONE"
+        else: return "UNDER"
     
 def make_deck(num_of_decks = 1)->list[Card]:
     deck = []
@@ -43,16 +74,19 @@ def print_start():
 def ask_player_amount():
     while True:
         try:
-            return int(input("Player amount: "))
+            amount = int(input("Player amount: "))
+            if 1 <= amount:
+                return amount
+            else:
+                print("choose more than 0 players")
         except ValueError:
             print("only ints dude")
 
 def init_players(amount):
     players = []
     for i in range(amount):
-        name = Player(input(f"Player nr {i+1}:s name: ")) 
-        if name != "house":
-            players.append(name)
+        name = input(f"Player nr {i+1}:s name: ").strip()
+        players.append(Player(name))
     return players
 
 def ask_user_choice(question:str,letters_options:dict[str,str])->str:
@@ -70,28 +104,9 @@ def ask_user_choice(question:str,letters_options:dict[str,str])->str:
             if user_input == letter:
                 return user_input
         print("Choose one of the options!\n")
-
-def check_value(player):
-    total_value = 0
-    for value in player.get_sorted_card_values():
-        if value >= 11 and value <= 13: 
-            #suited card
-            value = 10
-        elif value == 14:
-            #ace
-            if total_value + 11 > 21:
-                value = 1
-            else: value = 11
-        total_value += value
     
-    if total_value > 21:
-        return total_value,"BUSTED"
-    elif total_value == 21:
-        return total_value,"BLACKJACK"
-    else: return total_value,"UNDER"
-
 def print_player_dealer_hand(player,dealer):
-    print(f"\n\n{player.name}:s cards                       Dealers card")
+    print(f"\n\n{player.name}:s cards                    The Dealer card")
     print("--------------                  --------------")
     count = 0
     for card in player.hand:
@@ -100,28 +115,41 @@ def print_player_dealer_hand(player,dealer):
             print(f"{card}                   {dealer.hand[0]}")
         else: print(card)
         count+=1
-    sum,_ = check_value(player)
-    print(f"\nCard sum: {sum}                  Card value: {str(dealer.hand[0].value)}")    
+    sum = player.get_total_value()
+    print(f"\nCard sum: {sum}                  Card value: {str(dealer.hand[0].value)}")
+
+def print_dealer_hand(dealer):
+    print(f"\n\nThe Dealers cards\n------------------")
+    for card in dealer.hand:
+        print(card)
 
 class Game:
     def __init__(self,players,dealer):
         self.deck = make_deck(NUM_OF_DECKS)
-        self.players = players
+        self.players = self.clear_players_hands(players)
         self.dealer = dealer
+
+    def clear_players_hands(self,players):
+        for player in players:
+            player.hand.clear()
+        return players
     
     def give_card(self,recipient,amount = 1):
+        if amount > len(self.deck):
+            raise EmptyDeckError("Not enough cards left to finish the round")
         for _ in range(amount):
-            random_card = self.deck.pop(random.randint(0,len(self.deck)-1))
+            random_card = self.deck.pop(random.randrange(len(self.deck)))
             recipient.hand.append(random_card)
 
     def hit(self,player):
         self.give_card(player)
-        _,state = check_value(player)
+        state = player.get_state()
         return state
 
     def player_turn(self,player):
         print_player_dealer_hand(player,self.dealer)
-        while True:
+        state = player.get_state()
+        while state == "UNDER":
             user_choice = ask_user_choice("Choose your option",{"h":"Hit","s":"Stand"})
             
             if user_choice == "s":
@@ -131,30 +159,82 @@ class Game:
             state = self.hit(player)
             print_player_dealer_hand(player,self.dealer)
 
-            match(state):
-                case "BUSTED":
-                    print("Busted :(")
-                case "BLACKJACK": 
-                    print("BLACKJACK!!!") 
-                case "UNDER":
-                    continue
+        match(state):
+            case "BUSTED":
+                print("\nBUSTED")
+            case "BLACKJACK": 
+                print("\nBLACKJACK!!")
+            case "TWENTY_ONE":
+                print("\n21!")
 
-            #bust or blackjack here, under continues
-            input("Press Space to continue...")
+        input("\nPress Enter to continue")
+        return
 
+    def dealer_turn(self):
+        while True:
+            print_dealer_hand(self.dealer)
+            sum = self.dealer.get_total_value()
+            status = self.dealer.get_state()
+            print(f"Card sum: {sum}\nStatus: {status}")
+            if status == "UNDER":
+                if sum < 17:
+                    status = self.hit(self.dealer)
+                else:
+                    return status
+            else:
+                return status
+
+    def check_winner(self):
+        #busted players have already lost, even if the dealer also busts
+        if all(player.get_state() == "BUSTED" for player in self.players):
+            return self.dealer
+
+        best_score = (False, 0) #true is bigger than false
+        winners = []
+        for player in self.players + [self.dealer]:
+            state = player.get_state()
+            if state == "BUSTED":
+                continue
+            #a two card blackjack beats other hands worth 21
+            score = (state == "BLACKJACK", player.get_total_value())
+            if score > best_score:
+                best_score = score
+                winners = [player]
+            elif score == best_score: #lika
+                winners.append(player)
+        #if draw return none
+        if len(winners) == 1:
+            return winners[0]
+        return None 
+        
 def game_runner():
     print_start()
     players = init_players(ask_player_amount())
-    dealer = Player("dealer")
-    game = Game(players,dealer)
     while True:
 
-        game.give_card(game.dealer,2)
+        game = Game(players,Player("The Dealer"))
+        
+        try:
+            game.give_card(game.dealer,2)
+            for player in game.players:
+                game.give_card(player,2)
+            for player in game.players:
+                game.player_turn(player)
 
-        for player in game.players:
+            #if both players didnt bust
+            if any(player.get_state() != "BUSTED" for player in game.players):
+                game.dealer_turn()
 
-            game.give_card(player,2)
+            winner = game.check_winner()
 
-            game.player_turn(player)
+        except EmptyDeckError as error:
+            print(f"\n{error} This round is cancelled")
+            input("Press Enter to start a new round")
+            continue
+
+        if winner is None:
+            print("DRAW")
+        else:
+            print(f"THE WINNER IS: {winner.name}")
 
 game_runner()
