@@ -1,25 +1,25 @@
 lazy import random
-import time
+
+NUM_OF_DECKS = 1
+
 class Card:
     def __init__(self,suit,value):
         self.suit = suit
         self.value = value
-        
-    def get_print_format(self):
+
+    def __repr__(self) -> str:
         to_print = str(self.value)
         match self.value:
             case 11: to_print = "Knight"
             case 12: to_print = "Queen"
             case 13: to_print = "King"
             case 14: to_print = "Ace"
-
         return f"{to_print} of {self.suit}"
 
 class Player:
     def __init__(self,name:str):
         self.name = name
         self.hand = []
-
 
     def get_sorted_card_values(self)->list[int]:
         value_list = []
@@ -28,28 +28,17 @@ class Player:
         value_list.sort()
         return value_list
     
-def draw_card()->Card:
-    played_cards = []
-    while True:
-        suit = ""
-        match random.randint(1,4):
-            case 1: suit = "hearts"
-            case 2: suit = "clubs"
-            case 3: suit = "spades"
-            case 4: suit = "diamonds"
-        value = random.randint(2,14)
-        card = Card(suit,value)
-        if card not in played_cards:
-            played_cards.append(card)
-            return card
-        
-def give_card(recipient,amount = 1):
-    for _ in range(amount):
-        random_card = draw_card()
-        recipient.hand.append(random_card)
+def make_deck(num_of_decks = 1)->list[Card]:
+    deck = []
+    suits = ["hearts","clubs","spades","diamonds"]
+    for _ in range(num_of_decks):
+        for value in range(2,15):
+            for suit in suits:
+                deck.append(Card(suit,value))
+    return deck
 
 def print_start():
-    print("Welcome to Blackjack!")
+    print("Welcome to the Blackjack simulator 1.0!")
 
 def ask_player_amount():
     while True:
@@ -86,10 +75,10 @@ def check_value(player):
     total_value = 0
     for value in player.get_sorted_card_values():
         if value >= 11 and value <= 13: 
-            #klätt kort
+            #suited card
             value = 10
         elif value == 14:
-            #ess
+            #ace
             if total_value + 11 > 21:
                 value = 1
             else: value = 11
@@ -101,60 +90,71 @@ def check_value(player):
         return total_value,"BLACKJACK"
     else: return total_value,"UNDER"
 
-def print_player_hand(player):
-    print(f"\n\n{player.name}:s cards",end="")
-    print(f"Dealers card")
-    print("--------------                       --------------")
+def print_player_dealer_hand(player,dealer):
+    print(f"\n\n{player.name}:s cards                       Dealers card")
+    print("--------------                  --------------")
     count = 0
     for card in player.hand:
+        #print dealer card only on first row
         if count == 0:
-            print(card.get_print_format(),end="")
-            print("WWWWWWWWWWWW#")
+            print(f"{card}                   {dealer.hand[0]}")
+        else: print(card)
         count+=1
-    sum,unused = check_value(player)
-    print(f"\nCard sum: {sum}")    
+    sum,_ = check_value(player)
+    print(f"\nCard sum: {sum}                  Card value: {str(dealer.hand[0].value)}")    
 
-def hit(player):
-    give_card(player)
-    print_player_hand(player)
-    unused,state = check_value(player)
-    return state
+class Game:
+    def __init__(self,players,dealer):
+        self.deck = make_deck(NUM_OF_DECKS)
+        self.players = players
+        self.dealer = dealer
     
-def stand(player):
-    pass
+    def give_card(self,recipient,amount = 1):
+        for _ in range(amount):
+            random_card = self.deck.pop(random.randint(0,len(self.deck)-1))
+            recipient.hand.append(random_card)
 
-def house_turn():
-    pass
+    def hit(self,player):
+        self.give_card(player)
+        _,state = check_value(player)
+        return state
 
-def player_turn(player):
-    print_player_hand(player)
-    while True:
-        user_choice = ask_user_choice("Choose your option",{"h":"Hit","s":"Stand"})
-        match(user_choice):
-            case "h":
-                match(hit(player)):
-                    case "BUSTED":
-                        print("Busted :(")
-                        input("Press Space to continue...")
-                        break
-                    case "BLACKJACK": 
-                        print("BLACKJACK!!!") 
-                        input("Press Space to continue...")
-                        break
-                    case "UNDER": continue
-            case "s":
-                break
-    
-def runner():
+    def player_turn(self,player):
+        print_player_dealer_hand(player,self.dealer)
+        while True:
+            user_choice = ask_user_choice("Choose your option",{"h":"Hit","s":"Stand"})
+            
+            if user_choice == "s":
+                return
+            #user choice must be hit here
+
+            state = self.hit(player)
+            print_player_dealer_hand(player,self.dealer)
+
+            match(state):
+                case "BUSTED":
+                    print("Busted :(")
+                case "BLACKJACK": 
+                    print("BLACKJACK!!!") 
+                case "UNDER":
+                    continue
+
+            #bust or blackjack here, under continues
+            input("Press Space to continue...")
+
+def game_runner():
     print_start()
     players = init_players(ask_player_amount())
+    dealer = Player("dealer")
+    game = Game(players,dealer)
     while True:
-        for player in players:
-            #initial deal
-            give_card(player,2)
-            #game turn
-            if player.name == "house":
-                house_turn()
-            else: player_turn(player)
 
-runner()
+        game.give_card(game.dealer,2)
+
+        for player in game.players:
+
+            game.give_card(player,2)
+
+            game.player_turn(player)
+
+game_runner()
