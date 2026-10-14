@@ -104,28 +104,38 @@ def ask_user_choice(question:str,letters_options:dict[str,str])->str:
             if user_input == letter:
                 return user_input
         print("Choose one of the options!\n")
+
+def whitespace_generator(left_string:str,right_string:str,whitespace = 35)->str:
+    "Generates normalized whitespace between two strings"
+    #removes newline chars before count -1 gives the last element of 
+    #the split i.e. the actual string
+    temp_left = left_string.split("\n")[-1]
+    spacer = ""
+    for _ in range(whitespace-len(temp_left)):
+        spacer += " "
+    return f"{left_string}{spacer}{right_string}"
     
 def print_player_dealer_hand(player,dealer):
-    print(f"\n\n{player.name}:s cards                    The Dealer card")
-    print("--------------                  --------------")
+    print(whitespace_generator(f"\n\n{player.name}:s cards","Dealer card"))
+    print(whitespace_generator("---------------","---------------"))
     count = 0
     for card in player.hand:
         #print dealer card only on first row
         if count == 0:
-            print(f"{card}                   {dealer.hand[0]}")
+            print(whitespace_generator(str(card),dealer.hand[0]))
         else: print(card)
         count+=1
     sum = player.get_total_value()
-    print(f"\nCard sum: {sum}                  Card value: {str(dealer.hand[0].value)}")
+    print(whitespace_generator(f"\nCard sum: {sum}",f"Card value: {str(dealer.hand[0].value)}"))
 
 def print_dealer_hand(dealer):
-    print(f"\n\nThe Dealers cards\n------------------")
+    print(f"\n\nThe Dealers cards\n---------------")
     for card in dealer.hand:
         print(card)
 
 class Game:
-    def __init__(self,players,dealer):
-        self.deck = make_deck(NUM_OF_DECKS)
+    def __init__(self,players,dealer,deck = make_deck(NUM_OF_DECKS)):
+        self.deck = deck
         self.players = self.clear_players_hands(players)
         self.dealer = dealer
 
@@ -210,9 +220,11 @@ class Game:
 def game_runner():
     print_start()
     players = init_players(ask_player_amount())
+    deck = make_deck()
+
     while True:
 
-        game = Game(players,Player("The Dealer"))
+        game = Game(players,Player("The Dealer"),deck)
         
         try:
             game.give_card(game.dealer,2)
@@ -230,6 +242,7 @@ def game_runner():
         except EmptyDeckError as error:
             print(f"\n{error} This round is cancelled")
             input("Press Enter to start a new round")
+            deck = make_deck()
             continue
 
         if winner is None:
