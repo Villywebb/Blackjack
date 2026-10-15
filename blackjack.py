@@ -116,7 +116,7 @@ def whitespace_generator(left_string:str,right_string:str,whitespace = 35)->str:
     return f"{left_string}{spacer}{right_string}"
     
 def print_player_dealer_hand(player,dealer):
-    print(whitespace_generator(f"\n\n{player.name}:s cards","Dealer card"))
+    print(whitespace_generator(f"\n\n{player.name}:s hand","Dealers hand"))
     print(whitespace_generator("---------------","---------------"))
     count = 0
     for card in player.hand:
@@ -129,7 +129,7 @@ def print_player_dealer_hand(player,dealer):
     print(whitespace_generator(f"\nCard sum: {sum}",f"Card value: {str(dealer.hand[0].value)}"))
 
 def print_dealer_hand(dealer):
-    print(f"\n\nThe Dealers cards\n---------------")
+    print(f"\n\nDealers hand\n---------------")
     for card in dealer.hand:
         print(card)
 
@@ -185,7 +185,7 @@ class Game:
             print_dealer_hand(self.dealer)
             sum = self.dealer.get_total_value()
             status = self.dealer.get_state()
-            print(f"Card sum: {sum}\nStatus: {status}")
+            print(f"\nCard sum: {sum}")
             if status == "UNDER":
                 if sum < 17:
                     status = self.hit(self.dealer)
@@ -246,8 +246,9 @@ def game_runner():
             continue
 
         if winner is None:
-            print("DRAW")
+            print("\nIT'S A DRAW")
         else:
-            print(f"THE WINNER IS: {winner.name}")
+            print(f"\nTHE WINNER IS: {winner.name}")
+        input("\nPress Enter to continue")
 
 game_runner()
