@@ -1,6 +1,8 @@
 lazy import random
+lazy import time
 
 NUM_OF_DECKS = 1
+DEALER_DELAY = 0.8
 
 class EmptyDeckError(Exception):
     pass
@@ -59,7 +61,7 @@ class Player:
             return "TWENTY_ONE"
         else: return "UNDER"
     
-def make_deck(num_of_decks = 1)->list[Card]:
+def make_deck(num_of_decks:int = 1)->list[Card]:
     deck = []
     suits = ["hearts","clubs","spades","diamonds"]
     for _ in range(num_of_decks):
@@ -69,7 +71,7 @@ def make_deck(num_of_decks = 1)->list[Card]:
     return deck
 
 def print_start():
-    print("Welcome to the Blackjack simulator 1.0!")
+    print("=======================================\nWelcome to the Blackjack simulator 1.0!\n=======================================\n")
 
 def ask_player_amount():
     while True:
@@ -105,7 +107,7 @@ def ask_user_choice(question:str,letters_options:dict[str,str])->str:
                 return user_input
         print("Choose one of the options!\n")
 
-def whitespace_generator(left_string:str,right_string:str,whitespace = 35)->str:
+def whitespace_generator(left_string:str,right_string:str,whitespace = 40)->str:
     "Generates normalized whitespace between two strings"
     #removes newline chars before count -1 gives the last element of 
     #the split i.e. the actual string
@@ -127,12 +129,7 @@ def print_player_dealer_hand(player,dealer):
         count+=1
     sum = player.get_total_value()
     print(whitespace_generator(f"\nCard sum: {sum}",f"Card value: {str(dealer.hand[0].value)}"))
-
-def print_dealer_hand(dealer):
-    print(f"\n\nDealers hand\n---------------")
-    for card in dealer.hand:
-        print(card)
-
+        
 class Game:
     def __init__(self,players,dealer,deck = make_deck(NUM_OF_DECKS)):
         self.deck = deck
@@ -157,6 +154,8 @@ class Game:
         return state
 
     def player_turn(self,player):
+        print("\n============================================================")
+        print(f"                    {player.name}:s turn")
         print_player_dealer_hand(player,self.dealer)
         state = player.get_state()
         while state == "UNDER":
@@ -181,17 +180,26 @@ class Game:
         return
 
     def dealer_turn(self):
+        print(f"\n\nDealers hand\n----------------")
+        for card in self.dealer.hand:
+            time.sleep(DEALER_DELAY)
+            print(card)
+        
         while True:
-            print_dealer_hand(self.dealer)
             sum = self.dealer.get_total_value()
             status = self.dealer.get_state()
-            print(f"\nCard sum: {sum}")
+           
             if status == "UNDER":
                 if sum < 17:
                     status = self.hit(self.dealer)
+                    time.sleep(DEALER_DELAY)
+                    print(self.dealer.hand[-1])
                 else:
+                    time.sleep(DEALER_DELAY)
+                    print(f"\nCard sum: {sum}")
                     return status
             else:
+                print(f"\nCard sum: {sum}")
                 return status
 
     def check_winner(self):
@@ -244,11 +252,11 @@ def game_runner():
             input("Press Enter to start a new round")
             deck = make_deck()
             continue
-
+        time.sleep(DEALER_DELAY)
         if winner is None:
             print("\nIT'S A DRAW")
         else:
             print(f"\nTHE WINNER IS: {winner.name}")
         input("\nPress Enter to continue")
-
+        
 game_runner()
