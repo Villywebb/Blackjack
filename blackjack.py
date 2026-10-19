@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 lazy import random
 lazy import time
 
@@ -97,10 +98,21 @@ def make_deck(num_of_decks:int = 1)->list[Card]:
                 deck.append(Card(suit,value))
     return deck
 
+
 def print_start():
-    message = "Welcome to the Blackjack simulator 1.0!"
-    underscore = "═"*len(message)
-    print(f"\n{underscore}\n\n{message}\n\n{underscore}\n")
+    message =r"""
+ ________  ___       ________  ________  ___  __          ___  ________  ________  ___  __       
+|\   __  \|\  \     |\   __  \|\   ____\|\  \|\  \       |\  \|\   __  \|\   ____\|\  \|\  \     
+\ \  \|\ /\ \  \    \ \  \|\  \ \  \___|\ \  \/  /|_     \ \  \ \  \|\  \ \  \___|\ \  \/  /|_   
+ \ \   __  \ \  \    \ \   __  \ \  \    \ \   ___  \  __ \ \  \ \   __  \ \  \    \ \   ___  \  
+  \ \  \|\  \ \  \____\ \  \ \  \ \  \____\ \  \\ \  \|\  \\_\  \ \  \ \  \ \  \____\ \  \\ \  \ 
+   \ \_______\ \_______\ \__\ \__\ \_______\ \__\\ \__\ \________\ \__\ \__\ \_______\ \__\\ \__\
+    \|_______|\|_______|\|__|\|__|\|_______|\|__| \|__|\|________|\|__|\|__|\|_______|\|__| \|__|
+"""
+    print(message)                                  
+    message1 = "Welcome to the BLACKJACK simulator 1.0!"
+    underscore = "═"*len(message1)
+    print(f"\n{underscore}\n\n{message1}\n\n{underscore}\n")
 
 def ask_player_amount():
     while True:
@@ -297,6 +309,18 @@ def game_runner():
         if winner is None:
             print("\nIT'S A DRAW")
         else:
+            print(r"""
+ ______ __  __  ______                             
+/\__  _/\ \_\ \/\  ___\                            
+\/_/\ \\ \  __ \ \  __\                            
+   \ \_\\ \_\ \_\ \_____\                          
+ __ \/_/__/___/___/_____/__   __  ______  ______   
+/\ \  _ \ \/\ \/\ "-.\ \/\ "-.\ \/\  ___\/\  == \  
+\ \ \/ ".\ \ \ \ \ \-.  \ \ \-.  \ \  __\\ \  __<  
+ \ \__/".~\_\ \_\ \_\\"\_\ \_\\"\_\ \_____\ \_\ \_\
+  \/_/   \/_/\/_/\/_/ \/_/\/_/ \/_/\/_____/\/_/ /_/
+""")
+           
             print(f"\n★ ★ ★ THE WINNER IS {winner.name} ★ ★ ★ ")
         input("\nPress Enter to continue")
         
