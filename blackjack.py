@@ -7,19 +7,46 @@ DEALER_DELAY = 0.8
 class EmptyDeckError(Exception):
     pass
 
-class Card:
+class Card:#╔ ╗ ╚ ╝ ═ ║
+   
+    cardback_ascii = [
+                 "╔═════════╗",
+                 "║◆ ◇ ◆ ◇ ◆║",
+                 "║ ◇ ◆ ◇ ◆ ║",
+                 "║◆ ◇ ◆ ◇ ◆║",
+                 "║ ◇ ◆ ◇ ◆ ║",
+                 "║◆ ◇ ◆ ◇ ◆║",
+                 "╚═════════╝"]
     def __init__(self,suit,value):
         self.suit = suit
         self.value = value
 
-    def __repr__(self) -> str:
+    def get_value_str(self) -> str:
         to_print = str(self.value)
         match self.value:
-            case 11: to_print = "Knight"
-            case 12: to_print = "Queen"
-            case 13: to_print = "King"
-            case 14: to_print = "Ace"
-        return f"{to_print} of {self.suit}"
+            case 11: to_print = "J"
+            case 12: to_print = "Q"
+            case 13: to_print = "K"
+            case 14: to_print = "A"
+        return to_print
+
+    def get_ascii(self)->list[str]:
+        red = "\033[38;2;255;0;0m"
+        reset = "\033[0m"
+        suits_unicode = {"spades": "\u2660","hearts":f"{red}\u2665{reset}","diamonds":f"{red}\u2666{reset}","clubs":"\u2663"}
+        s = suits_unicode[self.suit]
+        v = self.get_value_str()
+
+        return [
+        "╔═════════╗",
+        f"║{v:<2}       ║",
+        "║         ║",
+        f"║    {s}    ║",
+        "║         ║",
+        f"║       {v:>2}║",
+        "╚═════════╝",
+    ]
+
 
 class Player:
     def __init__(self,name:str):
@@ -71,7 +98,9 @@ def make_deck(num_of_decks:int = 1)->list[Card]:
     return deck
 
 def print_start():
-    print("=======================================\nWelcome to the Blackjack simulator 1.0!\n=======================================\n")
+    message = "Welcome to the Blackjack simulator 1.0!"
+    underscore = "═"*len(message)
+    print(f"\n{underscore}\n\n{message}\n\n{underscore}\n")
 
 def ask_player_amount():
     while True:
@@ -101,35 +130,64 @@ def ask_user_choice(question:str,letters_options:dict[str,str])->str:
         print()
         for letter,option in letters_options.items():
             print(f"  {letter}) {option}")
-        user_input = input("\nOption: ").lower()
+        user_input = input("\n  ▶ ").lower()
         for letter in letters_options:
             if user_input == letter:
                 return user_input
-        print("Choose one of the options!\n")
-
-def whitespace_generator(left_string:str,right_string:str,whitespace = 40)->str:
-    "Generates normalized whitespace between two strings"
-    #removes newline chars before count -1 gives the last element of 
-    #the split i.e. the actual string
-    temp_left = left_string.split("\n")[-1]
-    spacer = ""
-    for _ in range(whitespace-len(temp_left)):
-        spacer += " "
-    return f"{left_string}{spacer}{right_string}"
+        print("\nChoose one of the options!\n")
     
 def print_player_dealer_hand(player,dealer):
-    print(whitespace_generator(f"\n\n{player.name}:s hand","Dealers hand"))
-    print(whitespace_generator("---------------","---------------"))
-    count = 0
+    cards_rows = []
+    card_width = len(Card.cardback_ascii[0])+2
+    player_hand_width = len(player.hand)*(card_width)
+    print("\n\n"+f"{player.name}:s hand".ljust(player_hand_width + 10)+ "Dealers hand")
+    player_underscore = "═"*(player_hand_width-2)
+    dealer_underscore = "═"*((len(dealer.hand)*card_width) - 2)
+    print(player_underscore.ljust(player_hand_width + 10)+dealer_underscore)
+
     for card in player.hand:
-        #print dealer card only on first row
-        if count == 0:
-            print(whitespace_generator(str(card),dealer.hand[0]))
-        else: print(card)
-        count+=1
-    sum = player.get_total_value()
-    print(whitespace_generator(f"\nCard sum: {sum}",f"Card value: {str(dealer.hand[0].value)}"))
+        cards_rows.append(card.get_ascii())
+    #space
+    cards_rows.append([" "*8]*len(Card.cardback_ascii))
+    #dealer cards
+    cards_rows.append(dealer.hand[0].get_ascii())
+    cards_rows.append(Card.cardback_ascii)
         
+    for row_index in range(len(cards_rows[0])):
+        for card in cards_rows:
+            print(card[row_index], end="  ")
+        print()
+
+    print(f"\nCard sum: {player.get_total_value()}".ljust(player_hand_width+11)+f"Card sum: {min(10,dealer.hand[0].value)}")
+
+def print_dealer_hand(dealer):
+    cards_rows = []
+    for card in dealer.hand:
+        cards_rows.append(card.get_ascii())
+
+    underscore = "═"*((len(Card.cardback_ascii[0])+2) * len(dealer.hand))
+    print("\n\nDealer's hand")
+    print(underscore)
+
+    for row_index in range(len(Card.cardback_ascii)):
+        for card_rows in cards_rows:
+            print(card_rows[row_index], end="  ")
+        print()
+
+    print(f"\nCard sum: {dealer.get_total_value()}")
+
+def print_state(player, state,is_dealer = False):
+    print(f"\n{player.name} got", end = " ")
+    match(state):
+        case "BUSTED":
+            print("BUSTED")
+        case "BLACKJACK": 
+            print("BLACKJACK!")
+        case "TWENTY_ONE":
+            print("21!")
+    if is_dealer and state == "UNDER":
+        print("under 21")
+      
 class Game:
     def __init__(self,players,dealer,deck = make_deck(NUM_OF_DECKS)):
         self.deck = deck
@@ -150,57 +208,40 @@ class Game:
 
     def hit(self,player):
         self.give_card(player)
-        state = player.get_state()
-        return state
 
     def player_turn(self,player):
-        print("\n============================================================")
-        print(f"                    {player.name}:s turn")
         print_player_dealer_hand(player,self.dealer)
         state = player.get_state()
         while state == "UNDER":
-            user_choice = ask_user_choice("Choose your option",{"h":"Hit","s":"Stand"})
+            #TODO: maybe use lambda function instead?
+            user_choice = ask_user_choice(f"{player.name}:s move?",{"h":"Hit","s":"Stand"})
             
             if user_choice == "s":
                 return
+            
             #user choice must be hit here
-
-            state = self.hit(player)
+            self.hit(player)
+            state = player.get_state()
             print_player_dealer_hand(player,self.dealer)
 
-        match(state):
-            case "BUSTED":
-                print("\nBUSTED")
-            case "BLACKJACK": 
-                print("\nBLACKJACK!!")
-            case "TWENTY_ONE":
-                print("\n21!")
+        print_state(player, state)
 
         input("\nPress Enter to continue")
         return
 
     def dealer_turn(self):
-        print(f"\n\nDealers hand\n----------------")
-        for card in self.dealer.hand:
-            time.sleep(DEALER_DELAY)
-            print(card)
         
-        while True:
-            sum = self.dealer.get_total_value()
-            status = self.dealer.get_state()
-           
-            if status == "UNDER":
-                if sum < 17:
-                    status = self.hit(self.dealer)
-                    time.sleep(DEALER_DELAY)
-                    print(self.dealer.hand[-1])
-                else:
-                    time.sleep(DEALER_DELAY)
-                    print(f"\nCard sum: {sum}")
-                    return status
-            else:
-                print(f"\nCard sum: {sum}")
-                return status
+        print_dealer_hand(self.dealer)
+
+        # hit until 17 or over
+        while self.dealer.get_total_value() < 17:
+            self.hit(self.dealer)
+            time.sleep(DEALER_DELAY)
+            print_dealer_hand(self.dealer)
+
+        state = self.dealer.get_state()
+        print_state(self.dealer,state,is_dealer=True)
+        return state
 
     def check_winner(self):
         #busted players have already lost, even if the dealer also busts
@@ -256,7 +297,7 @@ def game_runner():
         if winner is None:
             print("\nIT'S A DRAW")
         else:
-            print(f"\nTHE WINNER IS: {winner.name}")
+            print(f"\n★ ★ ★ THE WINNER IS {winner.name} ★ ★ ★ ")
         input("\nPress Enter to continue")
         
 game_runner()
