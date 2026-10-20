@@ -113,7 +113,7 @@ def print_start():
 def ask_player_count(max_players:int):
     while True:
         try:
-            amount = int(("Player amount: "))
+            amount = int(input("Player amount: "))
             if 1 <= amount <= max_players:
                 return amount
             else:
