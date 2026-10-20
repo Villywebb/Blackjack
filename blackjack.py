@@ -21,7 +21,7 @@ class Card:
                  "║ ◇ ◆ ◇ ◆ ║",
                  "║◆ ◇ ◆ ◇ ◆║",
                  "╚═════════╝"]
-    def __init__(self,suit,value):
+    def __init__(self, suit, value):
         self.suit = suit
         self.value = value
 
@@ -34,12 +34,12 @@ class Card:
             case 14: to_print = "A"
         return to_print
 
-    def get_ascii(self)->list[str]:
+    def get_ascii(self) -> list[str]:
         #color the text red
         red = "\033[38;2;255;0;0m"
         #reset to og color
         reset = "\033[0m"
-        suits_unicode = {"spades": "\u2660","hearts":f"{red}\u2665{reset}","diamonds":f"{red}\u2666{reset}","clubs":"\u2663"}
+        suits_unicode = {"spades": "\u2660", "hearts": f"{red}\u2665{reset}", "diamonds": f"{red}\u2666{reset}", "clubs": "\u2663"}
         s = suits_unicode[self.suit]
         v = self.get_value_str()
 
@@ -54,17 +54,17 @@ class Card:
     ]
 
 class Player:
-    def __init__(self,name:str):
+    def __init__(self, name: str):
         self.name = name
-        self.hand : list[Card] = []
+        self.hand: list[Card] = []
 
-    def get_hand_value(self)->int:
+    def get_hand_value(self) -> int:
         total_value = 0
         aces = 0
         for card in self.hand:
             value = card.value
             if value != 14:
-                value = min(10,value)
+                value = min(10, value)
             else: # is ace here
                 value = 11
                 aces += 1
@@ -75,7 +75,7 @@ class Player:
             aces -= 1
         return total_value
     
-    def get_state(self)->str:
+    def get_state(self) -> str:
         total_value = self.get_hand_value()
         if total_value > 21:
             return "BUSTED"
@@ -85,16 +85,6 @@ class Player:
             return "TWENTY_ONE"
         else: return "UNDER"
     
-def make_deck(num_of_decks:int = 1)->list[Card]:
-    deck = []
-    suits = ["hearts","clubs","spades","diamonds"]
-    for _ in range(num_of_decks):
-        for value in range(2,15):
-            for suit in suits:
-                deck.append(Card(suit,value))
-    return deck
-
-
 def print_start():
     message =r"""
  ________  ___       ________  ________  ___  __          ___  ________  ________  ___  __       
@@ -110,7 +100,7 @@ def print_start():
     underscore = "═"*len(message1)
     print(f"\n{underscore}\n\n{message1}\n\n{underscore}\n")
 
-def ask_player_count(max_players:int):
+def ask_player_count(max_players: int):
     while True:
         try:
             amount = int(input("Player amount: "))
@@ -121,7 +111,7 @@ def ask_player_count(max_players:int):
         except ValueError:
             print("only ints dude")
 
-def prompt_players(amount)->list[Player]:
+def prompt_players(amount) -> list[Player]:
     players = []
     for i in range(amount):
         name = input(f"Player nr {i+1}:s name: ").strip()
@@ -130,7 +120,7 @@ def prompt_players(amount)->list[Player]:
         players.append(Player(name))
     return players
 
-def ask_user_choice(question:str,letters_options:dict[str,str])->str:
+def ask_user_choice(question: str, letters_options: dict[str, str]) -> str:
     '''prints a list of options and returns user choice letter
     letter is key, option is value.
     Safe - can only return one of the defined letters'''
@@ -138,47 +128,49 @@ def ask_user_choice(question:str,letters_options:dict[str,str])->str:
     user_input = ""
     while True:
         print()
-        for letter,option in letters_options.items():
+        for letter, option in letters_options.items():
             print(f"  {letter}) {option}")
         user_input = input("\n  ▶ ").strip().lower()
         if user_input in letters_options:
             return user_input
         print("\nChoose one of the options!\n")
 
-def print_rows(cards_rows:list[list[str]]):
-     """for every row, prints every cards corresponding row"""
-     for row_index in range(len(cards_rows[0])):
-            for card in cards_rows:
-                print(card[row_index], end="  ")
-            print()
+def print_rows(cards_rows: list[list[str]]):
+    """for every row, prints every cards corresponding row"""
+    for row_index in range(len(cards_rows[0])):
+        for card in cards_rows:
+            print(card[row_index], end="  ")
+        print()
     
-def print_player_dealer_hand(player,dealer):
+def print_player_dealer_hand(player, dealer):
     cards_rows = []
-    card_width = len(Card.cardback_ascii[0])+2
-    player_hand_width = len(player.hand)*(card_width)
-    print("\n\n"+f"{player.name}:s hand".ljust(player_hand_width + 10)+ "Dealers hand")
-    player_underscore = "═"*(player_hand_width-2)
-    dealer_underscore = "═"*((len(dealer.hand)*card_width) - 2)
-    print(player_underscore.ljust(player_hand_width + 10)+dealer_underscore)
+    card_width = len(Card.cardback_ascii[0]) + 2
+    player_hand_width = len(player.hand) * (card_width)
+
+    print("\n\n"+f"{player.name}:s hand".ljust(player_hand_width + 10)+ "Dealer's hand")
+
+    player_underscore = "═" * (player_hand_width - 2)
+    dealer_underscore = "═" * ((len(dealer.hand) * card_width) - 2)
+    print(player_underscore.ljust(player_hand_width + 10) + dealer_underscore)
 
     for card in player.hand:
         cards_rows.append(card.get_ascii())
     #space
-    cards_rows.append([" "*8]*len(Card.cardback_ascii))
+    cards_rows.append([" "*8] * len(Card.cardback_ascii))
     #dealer cards
     cards_rows.append(dealer.hand[0].get_ascii())
     cards_rows.append(Card.cardback_ascii)
 
     print_rows(cards_rows)
 
-    print(f"\nCard sum: {player.get_hand_value()}".ljust(player_hand_width+11)+f"Card sum: {"11" if dealer.hand[0].value == 14 else min(10,dealer.hand[0].value)}")
+    print(f"\nCard sum: {player.get_hand_value()}".ljust(player_hand_width+11) + f"Card sum: {"11" if dealer.hand[0].value == 14 else min(10,dealer.hand[0].value)}")
 
 def print_dealer_hand(dealer):
     cards_rows = []
     for card in dealer.hand:
         cards_rows.append(card.get_ascii())
 
-    underscore = "═"*((len(Card.cardback_ascii[0])+2) * len(dealer.hand))
+    underscore = "═" * ((len(Card.cardback_ascii[0])+2) * len(dealer.hand))
     print("\n\nDealer's hand")
     print(underscore)
 
@@ -198,36 +190,45 @@ def print_state(player, state,is_dealer = False):
     if is_dealer and state == "UNDER":
         print(f"{player.get_hand_value()}")
 
-def wait_for_user(message:str):
+def make_deck(num_of_decks: int = 1) -> list[Card]:
+    deck = []
+    suits = ["hearts", "clubs", "spades", "diamonds"]
+    for _ in range(num_of_decks):
+        for value in range(2, 15):
+            for suit in suits:
+                deck.append(Card(suit, value))
+    return deck
+
+def wait_for_user(message: str):
     input(message)
 
-def clear_players_hands(players)->list[Player]:
+def clear_players_hands(players) -> list[Player]:
     for player in players:
         player.hand.clear()
     return players
       
 class Game:
-    def __init__(self,players:list[Player],dealer:Player,deck:list[Card]):
+    def __init__(self, players: list[Player], dealer: Player, deck: list[Card]):
         self.deck = deck
         self.players = players
         self.dealer = dealer
 
-    def give_card(self,recipient,amount = 1):
+    def give_card(self, recipient, amount = 1):
         if amount > len(self.deck):
             raise EmptyDeckError("Not enough cards left to finish the round")
         for _ in range(amount):
             random_card = self.deck.pop(random.randrange(len(self.deck)))
             recipient.hand.append(random_card)
 
-    def hit(self,player):
+    def hit(self, player):
         self.give_card(player)
 
-    def player_turn(self,player):
-        print_player_dealer_hand(player,self.dealer)
+    def player_turn(self, player):
+        print_player_dealer_hand(player, self.dealer)
         state = player.get_state()
         while state == "UNDER":
             #TODO: maybe use lambda function instead? if we implement split and double aswell
-            user_choice = ask_user_choice(f"{player.name}:s move?",{"h":"Hit","s":"Stand"})
+            user_choice = ask_user_choice(f"{player.name}:s move?",{"h":"Hit", "s":"Stand"})
             
             if user_choice == "s":
                 return
@@ -235,7 +236,7 @@ class Game:
             #user choice must be hit here
             self.hit(player)
             state = player.get_state()
-            print_player_dealer_hand(player,self.dealer)
+            print_player_dealer_hand(player, self.dealer)
 
         print_state(player, state)
 
@@ -252,10 +253,10 @@ class Game:
             print_dealer_hand(self.dealer)
 
         state = self.dealer.get_state()
-        print_state(self.dealer,state,is_dealer=True)
+        print_state(self.dealer, state, is_dealer=True)
         return state
 
-    def check_winner(self)->Player | None:
+    def check_winner(self) -> Player | None:
         """returns winning player if there is one, else none if its a draw"""
 
         """TODO: remake winning system to a induvidual check against the dealer,
@@ -291,7 +292,7 @@ def game_runner():
 
     while True:
 
-        game = Game(clear_players_hands(players),Player("The Dealer"),deck)
+        game = Game(clear_players_hands(players), Player("The Dealer"), deck)
         
         try:
             game.give_card(game.dealer,2)
