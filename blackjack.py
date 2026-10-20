@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-lazy import random
-lazy import time
+import random
+import time
+
+"""TODO: implement bank and betting. implement split and double. implement correct winner-function.
+implement quit alternative. maybe rename game class to "round" or turn or something.
+"""
 
 NUM_OF_DECKS = 1
-DEALER_DELAY = 0.8
+DEALER_DELAY = 1 #seconds
 
 class EmptyDeckError(Exception):
     pass
 
-class Card:#╔ ╗ ╚ ╝ ═ ║
-   
+class Card:
     cardback_ascii = [
                  "╔═════════╗",
                  "║◆ ◇ ◆ ◇ ◆║",
@@ -53,9 +56,9 @@ class Card:#╔ ╗ ╚ ╝ ═ ║
 class Player:
     def __init__(self,name:str):
         self.name = name
-        self.hand = []
+        self.hand : list[Card] = []
 
-    def get_hand_value(self):
+    def get_hand_value(self)->int:
         total_value = 0
         aces = 0
         for card in self.hand:
@@ -72,7 +75,7 @@ class Player:
             aces -= 1
         return total_value
     
-    def get_state(self):
+    def get_state(self)->str:
         total_value = self.get_hand_value()
         if total_value > 21:
             return "BUSTED"
@@ -107,21 +110,23 @@ def print_start():
     underscore = "═"*len(message1)
     print(f"\n{underscore}\n\n{message1}\n\n{underscore}\n")
 
-def ask_player_count(max_players):
+def ask_player_count(max_players:int):
     while True:
         try:
             amount = int(("Player amount: "))
             if 1 <= amount <= max_players:
                 return amount
             else:
-                print("choose more than 0 players")
+                print(f"Choose between 1 players and {max_players}!")
         except ValueError:
             print("only ints dude")
 
-def prompt_players(amount):
+def prompt_players(amount)->list[Player]:
     players = []
     for i in range(amount):
         name = input(f"Player nr {i+1}:s name: ").strip()
+        if name == "":
+            name = f"Player{i+1}"
         players.append(Player(name))
     return players
 
@@ -195,18 +200,18 @@ def print_state(player, state,is_dealer = False):
 
 def wait_for_user(message:str):
     input(message)
+
+def clear_players_hands(players)->list[Player]:
+    for player in players:
+        player.hand.clear()
+    return players
       
 class Game:
-    def __init__(self,players,dealer,deck):
+    def __init__(self,players:list[Player],dealer:Player,deck:list[Card]):
         self.deck = deck
-        self.players = self.clear_players_hands(players)
+        self.players = players
         self.dealer = dealer
 
-    def clear_players_hands(self,players):
-        for player in players:
-            player.hand.clear()
-        return players
-    
     def give_card(self,recipient,amount = 1):
         if amount > len(self.deck):
             raise EmptyDeckError("Not enough cards left to finish the round")
@@ -286,7 +291,7 @@ def game_runner():
 
     while True:
 
-        game = Game(players,Player("The Dealer"),deck)
+        game = Game(clear_players_hands(players),Player("The Dealer"),deck)
         
         try:
             game.give_card(game.dealer,2)
