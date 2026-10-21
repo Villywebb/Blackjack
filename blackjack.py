@@ -7,7 +7,7 @@ implement quit alternative. maybe rename game class to "round" or turn or someth
 maybe we need to start paying Vilmer.
 """
 
-#can you pull this johannes
+#can you pull this vilmer
 
 NUM_OF_DECKS = 1
 DEALER_DELAY = 1 #seconds
