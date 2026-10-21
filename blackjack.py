@@ -4,6 +4,7 @@ import time
 
 """TODO: implement bank and betting. implement split and double. implement correct winner-function.
 implement quit alternative. maybe rename game class to "round" or turn or something.
+maybe we need to start paying Vilmer.
 """
 
 NUM_OF_DECKS = 1
