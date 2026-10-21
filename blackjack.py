@@ -46,11 +46,11 @@ class Card:
 
         return [
         "╔═════════╗",
-        f"║{v:<2}       ║",
+       f"║{v:<2}       ║",
         "║         ║",
-        f"║    {s}    ║",
+       f"║    {s}    ║",
         "║         ║",
-        f"║       {v:>2}║",
+       f"║       {v:>2}║",
         "╚═════════╝",
     ]
 
@@ -313,7 +313,6 @@ def game_runner():
             wait_for_user("\nPress Enter to start a new round")
             deck = make_deck(NUM_OF_DECKS)
             continue
-        time.sleep(DEALER_DELAY)
         if winner is None:
             print("\nIT'S A DRAW")
         else:
