@@ -44,6 +44,7 @@ class Card:
         s = suits_unicode[self.suit]
         v = self.get_value_str()
 
+        #Nice card!
         return [
         "╔═════════╗",
        f"║{v:<2}       ║",
