@@ -2,8 +2,8 @@
 import random
 import time
 
-"""TODO: implement bank and betting. implement split and double. implement correct winner-function.
-implement quit alternative. maybe rename game class to "round" or turn or something.
+"""TODO: implement split and double.
+Maybe rename game class to "round" or turn or something.
 maybe we need to start paying Vilmer.
 """
 
@@ -57,9 +57,11 @@ class Card:
     ]
 
 class Player:
-    def __init__(self, name: str):
+    def __init__(self, bank: int, name: str):
         self.name = name
         self.hand: list[Card] = []
+        self.bank = bank
+        self.insats = 0
 
     def get_hand_value(self) -> int:
         total_value = 0
@@ -120,7 +122,16 @@ def prompt_players(amount) -> list[Player]:
         name = input(f"Player nr {i+1}:s name: ").strip()
         if name == "":
             name = f"Player{i+1}"
-        players.append(Player(name))
+        while True:
+            try:
+                bank = int(input("Spelarens inlagda saldo: "))
+                if bank <= 0:
+                    print("Saldot måste vara större än noll")
+                    continue
+                break
+            except ValueError:
+                print("Vänligen skriv ett heltal med siffror")
+        players.append(Player(bank=bank, name=name))
     return players
 
 def ask_user_choice(question: str, letters_options: dict[str, str]) -> str:
@@ -226,6 +237,26 @@ class Game:
     def hit(self, player):
         self.give_card(player)
 
+    def place_bet(self, player, amount):
+        if player.insats or not 0 < amount <= player.bank:
+            raise ValueError("Insatsen måste vara positiv och högst lika stor som saldot")
+        player.bank -= amount
+        player.insats = amount
+
+    def ask_bet(self, player):
+        while True:
+            try:
+                amount = int(input(f"Hur mycket av {player.name}s {player.bank} vill du satsa? "))
+                self.place_bet(player, amount)
+                return
+            except ValueError as error:
+                print(f"Ogiltig insats: {error}")
+
+    def refund_bets(self):
+        for player in self.players:
+            player.bank += player.insats
+            player.insats = 0
+
     def player_turn(self, player):
         print_player_dealer_hand(player, self.dealer)
         state = player.get_state()
@@ -259,34 +290,30 @@ class Game:
         print_state(self.dealer, state, is_dealer=True)
         return state
 
-    def check_winner(self) -> Player | None:
-        """returns winning player if there is one, else none if its a draw"""
-
-        """TODO: remake winning system to a induvidual check against the dealer,
-        so it matches correct blackjack rules"""
-
-        #busted players have already lost, even if the dealer also busts
-        if all(player.get_state() == "BUSTED" for player in self.players):
-            return self.dealer
-
-        best_score = (False, 0) #true is bigger than false
-        winners = []
-        for player in self.players + [self.dealer]:
+    def check_winner(self) -> dict[Player, str]:
+        """Settle each bet against the dealer once, returning individual results."""
+        results = {}
+        dealer_state = self.dealer.get_state()
+        dealer_score = (dealer_state == "BLACKJACK", self.dealer.get_hand_value())
+        for player in self.players:
             state = player.get_state()
-            if state == "BUSTED":
-                continue
-            #a two card blackjack beats other hands worth 21
             score = (state == "BLACKJACK", player.get_hand_value())
-            if score > best_score:
-                best_score = score
-                winners = [player]
-            elif score == best_score: #lika
-                winners.append(player)
-        #if draw return none
-        if len(winners) == 1:
-            return winners[0]
-        return None 
-        
+            if state == "BUSTED":
+                result = "LOSS"
+            elif dealer_state == "BUSTED" or score > dealer_score:
+                result = "WIN"
+            elif score == dealer_score:
+                result = "PUSH"
+            else:
+                result = "LOSS"
+            if result == "WIN":
+                player.bank += player.insats * (2.5 if state == "BLACKJACK" else 2)
+            elif result == "PUSH":
+                player.bank += player.insats
+            player.insats = 0
+            results[player] = result
+        return results
+
 def game_runner():
     print_start()
     max_amount_players = (52 * NUM_OF_DECKS - 2) // 2
@@ -294,10 +321,15 @@ def game_runner():
     deck = make_deck(NUM_OF_DECKS)
 
     while True:
-
-        game = Game(clear_players_hands(players), Player("The Dealer"), deck)
+        players = [player for player in players if player.bank >= 1]
+        if not players:
+            print("Inga spelare har tillräckligt saldo för en ny insats.")
+            return
+        game = Game(clear_players_hands(players), Player(0, "The dealer"), deck)
         
         try:
+            for player in game.players:
+                game.ask_bet(player)
             game.give_card(game.dealer,2)
             for player in game.players:
                 game.give_card(player,2)
@@ -308,29 +340,22 @@ def game_runner():
             if any(player.get_state() != "BUSTED" for player in game.players):
                 game.dealer_turn()
 
-            winner = game.check_winner()
+            results = game.check_winner()
 
         except EmptyDeckError as error:
+            game.refund_bets()
             print(f"\n{error} This round is cancelled")
             wait_for_user("\nPress Enter to start a new round")
             deck = make_deck(NUM_OF_DECKS)
             continue
-        if winner is None:
-            print("\nIT'S A DRAW")
-        else:
-            print(r"""
- ______ __  __  ______                             
-/\__  _/\ \_\ \/\  ___\                            
-\/_/\ \\ \  __ \ \  __\                            
-   \ \_\\ \_\ \_\ \_____\                          
- __ \/_/__/___/___/_____/__   __  ______  ______   
-/\ \  _ \ \/\ \/\ "-.\ \/\ "-.\ \/\  ___\/\  == \  
-\ \ \/ ".\ \ \ \ \ \-.  \ \ \-.  \ \  __\\ \  __<  
- \ \__/".~\_\ \_\ \_\\"\_\ \_\\"\_\ \_____\ \_\ \_\
-  \/_/   \/_/\/_/\/_/ \/_/\/_/ \/_/\/_____/\/_/ /_/
-""")
-           
-            print(f"\n★ ★ ★ THE WINNER IS {winner.name} ★ ★ ★ ")
-        wait_for_user("\nPress Enter to continue")
-        
-game_runner()
+        messages = {"WIN": "vinner", "LOSS": "förlorar", "PUSH": "spelar oavgjort"}
+        for player, result in results.items():
+            print(f"{player.name} {messages[result]}")
+        print("Aktuellt saldo är")
+        for p in players:
+            print(f'{p.name} har {p.bank}')
+        if ask_user_choice("Spela en runda till?", {"j": "Ja", "n": "Avsluta"}) == "n":
+            return
+
+if __name__ == "__main__":
+    game_runner()
