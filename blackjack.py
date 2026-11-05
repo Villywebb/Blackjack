@@ -209,7 +209,20 @@ def clear_players_hands(players) -> list[Player]:
     for player in players:
         player.hand.clear()
     return players
-      
+
+def menu_after_game():
+    while True:
+        print("\n1) Play again with same players")
+        print("2) Play again with new players ")
+        print("3) Quit")
+
+        choice = input("\n  ▶ ").strip()
+
+        if choice in ("1", "2", "3"):
+            return choice
+
+        print("\nChoose one of the options!\n")
+
 class Game:
     def __init__(self, players: list[Player], dealer: Player, deck: list[Card]):
         self.deck = deck
@@ -288,49 +301,60 @@ class Game:
         return None 
         
 def game_runner():
-    print_start()
-    max_amount_players = (52 * NUM_OF_DECKS - 2) // 2
-    players = prompt_players(ask_player_count(max_amount_players))
-    deck = make_deck(NUM_OF_DECKS)
 
     while True:
+        print_start()
+        max_amount_players = (52 * NUM_OF_DECKS - 2) // 2
+        players = prompt_players(ask_player_count(max_amount_players))
+        deck = make_deck(NUM_OF_DECKS)
 
-        game = Game(clear_players_hands(players), Player("The Dealer"), deck)
-        
-        try:
-            game.give_card(game.dealer,2)
-            for player in game.players:
-                game.give_card(player,2)
-            for player in game.players:
-                game.player_turn(player)
+        while True:
+            game = Game(clear_players_hands(players), Player("The Dealer"), deck)
+            
+            try:
+                game.give_card(game.dealer,2)
+                for player in game.players:
+                    game.give_card(player,2)
+                for player in game.players:
+                    game.player_turn(player)
 
-            #if both players didnt bust
-            if any(player.get_state() != "BUSTED" for player in game.players):
-                game.dealer_turn()
+                #if both players didnt bust
+                if any(player.get_state() != "BUSTED" for player in game.players):
+                    game.dealer_turn()
 
-            winner = game.check_winner()
+                winner = game.check_winner()
 
-        except EmptyDeckError as error:
-            print(f"\n{error} This round is cancelled")
-            wait_for_user("\nPress Enter to start a new round")
-            deck = make_deck(NUM_OF_DECKS)
-            continue
-        if winner is None:
-            print("\nIT'S A DRAW")
-        else:
-            print(r"""
- ______ __  __  ______                             
-/\__  _/\ \_\ \/\  ___\                            
-\/_/\ \\ \  __ \ \  __\                            
-   \ \_\\ \_\ \_\ \_____\                          
- __ \/_/__/___/___/_____/__   __  ______  ______   
-/\ \  _ \ \/\ \/\ "-.\ \/\ "-.\ \/\  ___\/\  == \  
-\ \ \/ ".\ \ \ \ \ \-.  \ \ \-.  \ \  __\\ \  __<  
- \ \__/".~\_\ \_\ \_\\"\_\ \_\\"\_\ \_____\ \_\ \_\
-  \/_/   \/_/\/_/\/_/ \/_/\/_/ \/_/\/_____/\/_/ /_/
-""")
-           
-            print(f"\n★ ★ ★ THE WINNER IS {winner.name} ★ ★ ★ ")
-        wait_for_user("\nPress Enter to continue")
+            except EmptyDeckError as error:
+                print(f"\n{error} This round is cancelled")
+                wait_for_user("\nPress Enter to start a new round")
+                deck = make_deck(NUM_OF_DECKS)
+                continue
+            if winner is None:
+                print("\nIT'S A DRAW")
+            else:
+                print(r"""
+    ______ __  __  ______                             
+    /\__  _/\ \_\ \/\  ___\                            
+    \/_/\ \\ \  __ \ \  __\                            
+    \ \_\\ \_\ \_\ \_____\                          
+    __ \/_/__/___/___/_____/__   __  ______  ______   
+    /\ \  _ \ \/\ \/\ "-.\ \/\ "-.\ \/\  ___\/\  == \  
+    \ \ \/ ".\ \ \ \ \ \-.  \ \ \-.  \ \  __\\ \  __<  
+    \ \__/".~\_\ \_\ \_\\"\_\ \_\\"\_\ \_____\ \_\ \_\
+    \/_/   \/_/\/_/\/_/ \/_/\/_/ \/_/\/_____/\/_/ /_/
+    """)
+            
+                print(f"\n★ ★ ★ THE WINNER IS {winner.name} ★ ★ ★ ")
+            wait_for_user("\nPress Enter to continue")
+
+            choice = menu_after_game()
+            if choice == "1":
+                continue
+            elif choice == "2":
+                break
+            elif choice == "3":
+                return
+
+
         
 game_runner()
