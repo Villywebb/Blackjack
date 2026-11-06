@@ -1,13 +1,5 @@
-#!/usr/bin/env python3
 import random
 import time
-
-"""TODO: implement bank and betting. implement split and double. implement correct winner-function.
-implement quit alternative. maybe rename game class to "round" or turn or something.
-maybe we need to start paying Vilmer.
-"""
-
-#can you pull this vilmer
 
 NUM_OF_DECKS = 1
 DEALER_DELAY = 1 #seconds
@@ -210,19 +202,6 @@ def clear_players_hands(players) -> list[Player]:
         player.hand.clear()
     return players
 
-def menu_after_game():
-    while True:
-        print("\n1) Play again with same players")
-        print("2) Play again with new players ")
-        print("3) Quit")
-
-        choice = input("\n  ▶ ").strip()
-
-        if choice in ("1", "2", "3"):
-            return choice
-
-        print("\nChoose one of the options!\n")
-
 class Game:
     def __init__(self, players: list[Player], dealer: Player, deck: list[Card]):
         self.deck = deck
@@ -267,7 +246,7 @@ class Game:
             self.hit(self.dealer)
             time.sleep(DEALER_DELAY)
             print_dealer_hand(self.dealer)
-
+        time.sleep(DEALER_DELAY)
         state = self.dealer.get_state()
         print_state(self.dealer, state, is_dealer=True)
         return state
@@ -345,16 +324,10 @@ def game_runner():
     """)
             
                 print(f"\n★ ★ ★ THE WINNER IS {winner.name} ★ ★ ★ ")
-            wait_for_user("\nPress Enter to continue")
 
-            choice = menu_after_game()
-            if choice == "1":
-                continue
-            elif choice == "2":
-                break
-            elif choice == "3":
-                return
+            match ask_user_choice("Play Again?",{"s":"Same players","n":"New players","q":"Quit"}):
+                case "s": continue
+                case "n": break
+                case "q": return
 
-
-        
 game_runner()
